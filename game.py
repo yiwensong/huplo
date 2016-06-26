@@ -277,10 +277,20 @@ class Hand():
 
   # End of class
 
+class CallStation():
+  '''Literal calling station AI'''
+  def __init__(self):
+    pass
+
+  def play(self,game):
+    return game.xc
+
 class Player():
   def __init__(self,stack,player_type,ai=None):
     self.player_type = player_type
     self.stack = stack
+    if ai is None:
+      ai = CallStation()
     self.ai = ai
 
     # Set by game
@@ -340,7 +350,10 @@ class Game():
     opp = self.players[(pl + 1) % 2]
     pl = self.players[pl]
     prerake_pot = opp.bet + self.pot + pl.bet
-    raked_pot = max(prerake_pot * (1. - self.rake), prerake_pot - self.max_rake)
+    if len(pl.hand.community) > 0:
+      raked_pot = max(prerake_pot * (1. - self.rake), prerake_pot - self.max_rake)
+    else:
+      raked_pot = prerake_pot
     opp.stack += raked_pot
     opp.bet = 0.
     self.pot = 0.
@@ -394,8 +407,11 @@ class Game():
       else:
         return self.player_action_prompt(pl)
     else:
-      # AI player
-      pass
+      # AI player 
+      # TODO: Make a non call station AI
+      ai_action = player.ai.play(self)(pl)
+      print 'AI action',ai_action
+      return ai_action
     return False
 
   def betting_round(self,pf=False):
@@ -427,7 +443,7 @@ class Game():
   def find_winner(self):
     if self.p0.hand > self.p1.hand:
       return 0
-    elif self.p1.hand < self.p0.hand:
+    elif self.p0.hand < self.p1.hand:
       return 1
     return 2 # chop the pot
 
@@ -436,6 +452,9 @@ class Game():
     print self.p0.hand
     print 'Player 2\'s Hand:'
     print self.p1.hand
+    print 'Player 1: ',self.p0.stack
+    print 'Player 2: ',self.p1.stack
+    print '=====================\n\n'
 
   def start(self):
     self.pot = 0.
@@ -445,24 +464,32 @@ class Game():
     self.blinds()
 
     self.deal_hole()
+    print '***PREFLOP***'
+    print 'Pot: ',self.pot + self.p0.bet + self.p1.bet
     print self.p0.hand,'\n'
     if self.betting_round(pf=True):
       self.show_hands()
       return
 
     self.deal_community(3)
+    print '***FLOP***'
+    print 'Pot: ',self.pot + self.p0.bet + self.p1.bet
     print self.p0.hand,'\n'
     if self.betting_round():
       self.show_hands()
       return
 
     self.deal_community(1)
+    print '***TURN***'
+    print 'Pot: ',self.pot + self.p0.bet + self.p1.bet
     print self.p0.hand,'\n'
     if self.betting_round():
       self.show_hands()
       return
 
     self.deal_community(1)
+    print '***RIVER***'
+    print 'Pot: ',self.pot + self.p0.bet + self.p1.bet
     print self.p0.hand,'\n'
     if self.betting_round():
       self.show_hands()
@@ -471,6 +498,7 @@ class Game():
     raked_pot = max(self.pot * (1. - self.rake), self.pot - self.max_rake)
 
     winner = self.find_winner()
+    print 'winner',winner
     if winner == 0:
       self.p0.stack += raked_pot
     if winner == 1:
@@ -479,16 +507,20 @@ class Game():
       self.p0.stack += raked_pot/2.
       self.p1.stack += raked_pot/2.
     self.show_hands()
+
     return
 
   def play(self):
-    while True:
+    while self.p0.stack > 0. and self.p1.stack > 0.:
       self.start()
+      self.btn = (self.btn + 1) % 2
     
   def __str__(self):
     return ''
 
 
+g = Game()
+g.play()
 
 '''
 d = Deck()
