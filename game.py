@@ -323,15 +323,18 @@ class Game():
     amt2call = opp.bet - pl.bet
 
     if amt2call > pl.stack:
-      opp.bet = pl.stack + pl.bet
+      # opp.bet = pl.stack + pl.bet
+      diff = opp.bet - pl.stack - pl.bet
+      opp.bet -= diff
+      opp.stack += diff
     
     pl.stack -= opp.bet - pl.bet
     pl.bet = opp.bet
-    return False
+    return 'xc'
 
 
   def br(self,pl,amt='pot'):
-    self.last_action = pl
+    # self.last_action = pl
     opp = self.players[(pl + 1) % 2]
     pl = self.players[pl]
     amt2call = opp.bet - pl.bet
@@ -344,12 +347,15 @@ class Game():
       amt = pot
     pl.stack -= amt
     pl.bet += amt
-    return False
+    return 'br'
 
   def f(self,pl):
     opp = self.players[(pl + 1) % 2]
     pl = self.players[pl]
     prerake_pot = opp.bet + self.pot + pl.bet
+    if opp.bet <= pl.bet:
+      # Check if no bet
+      return 'xc'
     if len(pl.hand.community) > 0:
       raked_pot = max(prerake_pot * (1. - self.rake), prerake_pot - self.max_rake)
     else:
@@ -358,7 +364,7 @@ class Game():
     opp.bet = 0.
     self.pot = 0.
     self.bet = 0.
-    return True
+    return 'f'
 
   def blinds(self):
     if self.btn == 0:
@@ -386,12 +392,16 @@ class Game():
 
   def player_action_prompt(self,pl):
     '''Makes a prompt on what the player does'''
-    print 'player number',pl
     player = self.players[pl]
+    opp = self.players[(pl + 1) % 2]
+    if player.stack <= 0.:
+      print 'Player',pl,'is all in.'
+    if player.stack <= 0. or opp.stack <= 0.:
+      return self.xc(pl)
     pltype = player.player_type
     if pltype == 0:
       # Human player
-      print 'player hand',player.hand
+      print '\nPlayer',pl,'your turn to act'
       action_str = raw_input('')
       split_str = re.split(' ',action_str)
       if split_str[0] == 'x' or split_str[0] == 'c':
@@ -408,13 +418,16 @@ class Game():
         return self.player_action_prompt(pl)
     else:
       # AI player 
-      # TODO: Make a non call station AI
-      ai_action = player.ai.play(self)(pl)
-      print 'AI action',ai_action
-      return ai_action
-    return False
+      print '\nAI Player',pl,'is acting...'
+      try:
+        ai_action = player.ai.play(self)(pl)
+        return ai_action
+      except:
+        pass
+    return self.f(pl)
 
   def betting_round(self,pf=False):
+    print 'button:',self.btn
     if pf:
       self.action = self.btn
     else:
@@ -422,14 +435,14 @@ class Game():
     self.last_action = (self.action + 1) % 2
 
     while True:
-      if self.last_action is None or pf:
-        self.last_action = (self.btn + 1) % 2
-        pf = False
       # It is self.action player's turn to act
       act = self.player_action_prompt(self.action)
-      if act:
+      print 'Player',self.action,'did',act,'\n'
+      if act == 'f':
         # Folded
         return True
+      if act == 'br':
+        self.last_action = (self.action + 1) % 2
       if self.action == self.last_action:
         break
       self.action = (self.action + 1) % 2
@@ -499,13 +512,20 @@ class Game():
 
     winner = self.find_winner()
     print 'winner',winner
+    print 'pot with rake:',raked_pot
     if winner == 0:
+      print 'winner is 0', self.p0.stack
       self.p0.stack += raked_pot
+      print 'winner is 0', self.p0.stack
     if winner == 1:
+      print 'winner is 1', self.p1.stack
       self.p1.stack += raked_pot
+      print 'winner is 1', self.p1.stack
     if winner == 2:
       self.p0.stack += raked_pot/2.
       self.p1.stack += raked_pot/2.
+      print 'winner is 0', self.p0.stack
+      print 'winner is 1', self.p1.stack
     self.show_hands()
 
     return
