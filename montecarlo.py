@@ -42,7 +42,7 @@ class MCT():
     if self.parent is not None:
       self.parent.prop_up(sim_value)
 
-def mcts(game,max_sim=1000):
+def mcts(game,max_sim=5000):
   '''Assume game has the following:
   * game.active() returns which player is active.
   * game.moves() which returns a list of valid moves
@@ -62,12 +62,16 @@ def mcts(game,max_sim=1000):
     curr.prop_up(outcomes)
     curr.expand()
 
+  if len(mct_root.children) == 0:
+    return 0
+
   ap = game.active()
-  points = map(lambda arr: arr.total_value[ap], mct_root.children)
-  print mct_root.children
-  print 'points',points
+  points = map(lambda arr: arr.total_value[ap]/arr.trials, mct_root.children)
   max_points = max(points)
   best = points.index(max_points)
+
+  print points, max_points, best
+  print game.moves()
 
   return best
 
@@ -146,7 +150,7 @@ for i in order:
   print t.payoff()
 
 t = TicTacToe()
-while t.payoff()[0] == 0:
+while t.payoff()[0] == 0 and len(t.moves()) > 0:
   if t.active() == 0:
     # Player turn
     valid = -1
