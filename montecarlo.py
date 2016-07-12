@@ -24,7 +24,7 @@ class MCT():
       return self
 
     r = random.randint(0,len(self.children)-1)
-    return random_traverse(self.children(r))
+    return self.children[r].random_traverse()
 
   def simulate(self):
     '''Plays the game until the end. Returns a tuple of results (p0 net, p1 net).'''
@@ -63,7 +63,9 @@ def mcts(game,max_sim=1000):
     curr.expand()
 
   ap = game.active()
-  points = map(lambda arr: arr[ap], mct_root.children.total_value)
+  points = map(lambda arr: arr.total_value[ap], mct_root.children)
+  print mct_root.children
+  print 'points',points
   max_points = max(points)
   best = points.index(max_points)
 
@@ -74,7 +76,7 @@ def mcts(game,max_sim=1000):
 class TicTacToe():
   def __init__(self,arg=None):
     if arg is not None:
-      self.board = arg.board
+      self.board = map(lambda i:i, arg.board)
       self.turn = arg.turn
       return
     self.board = [0] * 9
@@ -94,23 +96,32 @@ class TicTacToe():
     return TicTacToe(arg=self)
 
   def move(self,move):
-    if self.board[move] != 0:
-      return
+    if move not in self.moves():
+      return -1
     self.board[move] = int((self.turn - .5) * 2)
     self.turn = (self.turn + 1) % 2
 
   def payoff(self):
     b = self.board
+    winner = 0
     for i in xrange(3):
       if b[3*i] == b[3*i+1] == b[3*i+2]:
-        return b[3*i]
+        winner = b[3*i]
       if b[i] == b[i+3] == b[i+6]:
-        return b[i]
+        winner = b[i]
     if b[0] == b[4] == b[8]:
-      return b[0]
+      winner = b[0]
     if b[2] == b[4] == b[6]:
-      return b[2]
-    return 0
+      winner = b[2]
+
+    if winner is 0:
+      return (0,0)
+    
+    winner = (winner + 1) / 2
+    outcomes = [0,0]
+    outcomes[winner] = 1
+    outcomes[(winner + 1) % 2] = -1
+    return tuple(outcomes)
 
   def __str__(self):
     s = ''
@@ -120,7 +131,7 @@ class TicTacToe():
       elif self.board[i] == 1:
         s += 'o '
       else:
-        s += '  '
+        s += '- '
       if i % 3 == 2:
         s += '\n'
     return s
@@ -131,5 +142,20 @@ order = range(9)
 random.shuffle(order)
 for i in order:
   t.move(i)
-  print t.moves()
-print t
+  print t
+  print t.payoff()
+
+t = TicTacToe()
+while t.payoff()[0] == 0:
+  if t.active() == 0:
+    # Player turn
+    valid = -1
+    while valid == -1:
+      player_mv = input('Which square?\n-> ')
+      valid = t.move(player_mv)
+  else:
+    # AI turn
+    ai_mv_idx = mcts(t)
+    t.move(t.moves()[ai_mv_idx])
+  print t
+print t.payoff()
