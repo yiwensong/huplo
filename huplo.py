@@ -1,5 +1,5 @@
 import montecarlo
-import game
+import huplo_game
 
 class HUPLO_game():
   '''This is the class that will hook up the MCTS code with the game code'''
