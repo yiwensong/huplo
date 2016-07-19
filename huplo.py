@@ -1,18 +1,18 @@
 import montecarlo
-import huplo_game
+import huplo_game as game
 
 class HUPLO_game():
   '''This is the class that will hook up the MCTS code with the game code'''
 
-  def __init__(self,arg=None):
-    pass
+  def __init__(self,g,arg=None):
+    self.g = game.Game(p0type=0,p1type=0,copy=g)
   
   def __str__(self):
     s = ''
     return s 
 
   def active(self):
-    return 0
+    return self.g.action
 
   def copy(self):
     return HUPLO(self)

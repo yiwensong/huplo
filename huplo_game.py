@@ -3,8 +3,13 @@ import re
 
 class Deck():
   '''The deck helps us play the game'''
-  def __init__(self):
+  def __init__(self,cpy=None):
     '''Makes a new deck and shuffles it, sets the location index to 0'''
+    if cpy is not None:
+      self.cards = map(lambda a:a,cpy.cards)
+      self.drawn = cpy.drawn
+      self.shuffle_remaining()
+      return
     self.cards = range(52)
     self.drawn = 0
     random.shuffle(self.cards)
@@ -18,6 +23,13 @@ class Deck():
   def shuffle(self):
     random.shuffle(self.cards)
     self.drawn = 0
+
+  def shuffle_remaining(self):
+    used = self.cards[:self.drawn]
+    rest = self.cards[self.drawn:]
+    random.shuffle(rest)
+    self.cards = used + rest
+
 
 class Hand():
   def __init__(self,hole):
@@ -299,8 +311,24 @@ class Player():
 
 class Game():
   '''This is the game class. Every time you play a game, you will initialize this class'''
-  def __init__(self,p0=100.,p1=100.,bb=1.,rake=.05,max_rake=.625,p0type=0,p1type=1,p0ai=None,p1ai=None):
-    '''Initializes a game with an AI and a player. Human player is p1 and AI is p0'''
+  def __init__(self,p0=100.,p1=100.,bb=1.,rake=.05,max_rake=.625,p0type=0,p1type=1,p0ai=None,p1ai=None,copy=None):
+    '''Initializes a game with an AI and a player. Human player is p0 and AI is p1'''
+    if copy is not None:
+      self.p0 = Player(p0,p0type,ai=p0ai)
+      self.p1 = Player(p1,p1type,ai=p1ai)
+      self.players = [self.p0,self.p1]
+      self.bb = copy.bb
+
+      self.deck = Deck(cpy=copy.deck)
+      self.community = copy.community
+      self.rake = copy.rake
+      self.max_rake = copy.max_rake
+      self.btn = copy.btn
+      self.action = copy.action
+      self.last_action = copy.last_action
+      self.pot = copy.pot
+      return
+
     self.p0 = Player(p0,p0type,ai=p0ai)
     self.p1 = Player(p1,p1type,ai=p1ai)
     self.players = [self.p0,self.p1]
@@ -539,8 +567,12 @@ class Game():
     return ''
 
 
-g = Game()
-g.play()
+def main():
+  g = Game()
+  g.play()
+
+if __name__=='__main__':
+  main()
 
 '''
 d = Deck()
