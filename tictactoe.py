@@ -91,3 +91,20 @@ while t.payoff()[0] == 0 and len(t.moves()) > 0:
     t.move(ai_mv)
   print t
 print t.payoff()
+
+
+
+t = TicTacToe()
+while t.payoff()[0] == 0 and len(t.moves()) > 0:
+  if t.active() == 1:
+    # Player turn
+    valid = -1
+    while valid == -1:
+      player_mv = input('Which square?\n-> ')
+      valid = t.move(player_mv)
+  else:
+    # AI turn
+    ai_mv = mcts(t)
+    t.move(ai_mv)
+  print t
+print t.payoff()

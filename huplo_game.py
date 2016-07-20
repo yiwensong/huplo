@@ -359,7 +359,8 @@ class Game():
     pl.stack -= opp.bet - pl.bet
     pl.bet = opp.bet
     return 'xc'
-
+  
+  def maxbet(self,pl):
 
   def br(self,pl,amt='pot'):
     # self.last_action = pl

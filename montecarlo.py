@@ -2,16 +2,29 @@ import random
 import math
 
 class MCT():
-  def __init__(self, parent, game,active_player=0):
+  def __init__(self, parent, game, active_player=0):
     self.parent = parent
-    if parent is None:
-      self.player = active_player
-    else:
-      self.player = (self.parent.player + 1) % 2
+    # if parent is None:
+    #   self.player = active_player
+    # else:
+    #   self.player = (self.parent.player + 1) % 2
+    self.player = game.active()
+    # self.player = (self.player + 1) % 2
+    # print self.player
     self.game = game
     self.total_value = [0.,0.]
     self.trials = 1
     self.children = []
+  
+  def __str__(self):
+    lvl = 0
+    s = 'node:\n' + str(self.player) + '\n'
+    p = self
+    while p.parent is not None:
+      p = p.parent
+      s += str(p.player) + '\n'
+    s += 'end\n\n'
+    return s
 
   def add_child(self, child):
     self.children.append(child)
@@ -28,12 +41,16 @@ class MCT():
       self.children.append(child)
 
   def get_score(self, t, c):
+    if self.parent is None:
+      return 0
     val = self.game.payoff()
-    win_rate = self.total_value[self.player] / self.trials
+    win_rate = self.total_value[self.parent.player] / self.trials
     exploration = math.sqrt(math.log(t) / self.trials)
     score = win_rate + c * exploration
     if val[0] != 0 or val[1] != 0:
-      return val[self.player] * 100 + c * exploration
+      return val[self.parent.player] + c * exploration
+    if t == 400:
+      print 'self.player',self.player,score
     return score
 
   def random_traverse(self,t,c=None):
@@ -55,14 +72,17 @@ class MCT():
 
     # return self.children[i].random_traverse(t,c)
 
-    m = scores.index(max(scores))
+    m = []
+    for idx in range(len(scores)):
+      if scores[idx] == max(scores):
+        m.append(idx)
+    m = m[random.randint(0,len(m)-1)]
+
+    wr = map(lambda child: child.total_value[0]/child.trials, self.children)
     # if self.parent is None:
-    #   print m
-    #   print scores
+    #   print 'rt0',wr
+    #   print 'rand trav',scores,m
     
-    # if self.parent is None:
-    #   print ''
-    # print self.player,':',self.game.moves()[m],'(',max(scores),')'
     return self.children[m].random_traverse(t,c)
 
   def simulate(self):
@@ -74,6 +94,9 @@ class MCT():
       g.move(moves[random.randint(0,len(moves)-1)])
       moves = g.moves()
       val = g.payoff()
+    # print g.payoff()
+    # print self
+    # print g
     return g.payoff()
   
   def prop_up(self,sim_value):
@@ -101,7 +124,8 @@ def mcts(game,max_sim=1000,c=None):
   '''
   g = game.copy()
   ap = g.active()
-  mct_root = MCT(None,g,(ap + 1) % 2)
+  mct_root = MCT(None,g) #,(ap + 1) % 2)
+  print ap,g.active(),mct_root.player
   
   for t in xrange(1,max_sim):
     curr = mct_root
@@ -109,6 +133,9 @@ def mcts(game,max_sim=1000,c=None):
     outcomes = curr.simulate()
     curr.prop_up(outcomes)
     curr.expand()
+  print 'OUTCOMES AND CURR.GAME'
+  print outcomes
+  print curr.game
 
   if len(mct_root.children) == 0:
     return 0
@@ -122,10 +149,10 @@ def mcts(game,max_sim=1000,c=None):
   max_points = max(points)
   best = points.index(max_points)
 
-  # print points, max_points, best
-  # print players
-  # print scores
-  # print game.moves()
+  print points, max_points, best
+  print players
+  print scores
+  print game.moves()
 
   return game.moves()[best]
 

@@ -18,10 +18,24 @@ class HUPLO_game():
     return HUPLO(self)
 
   def moves(self):
-    return []
+    return ['f','xc','br0','br1','br2','br3']
 
   def move(self,mv):
-    pass
+    act = self.g.action
+    if mv == 'f':
+      pass
+    elif mv == 'xc':
+      pass
+    elif mv == 'br0':
+      pass
+    elif mv == 'br1':
+      pass
+    elif mv == 'br2':
+      pass
+    elif mv == 'br3':
+      pass
+    else:
+      return
 
   def payoff(self):
     return [0,0]
