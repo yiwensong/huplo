@@ -1,5 +1,5 @@
 # huplo
-an attempt at making a heads up PLO AI
+an attempt at making a **H**eads **U**p **P**ot **L**imit **O**maha AI.
 
 ## Description
 Heads-up PLO AI using Monte Carlo Tree Search.
