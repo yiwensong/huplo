@@ -361,13 +361,20 @@ class Game():
     return 'xc'
   
   def maxbet(self,pl):
+    opp = self.players[(pl + 1) % 2]
+    pl = self.players[pl]
+    return 2 * opp.bet + self.pot
 
   def br(self,pl,amt='pot'):
     # self.last_action = pl
+    pot = self.maxbet(pl)
     opp = self.players[(pl + 1) % 2]
     pl = self.players[pl]
     amt2call = opp.bet - pl.bet
-    pot = 2 * opp.bet + self.pot
+    if amt < 2*opp.bet - pl.bet:
+      amt = 2*opp.bet - pl.bet
+    if amt < self.bb:
+      amt = self.bb
     if amt == 'pot':
       amt = pot
     if amt > pl.stack:
@@ -378,21 +385,22 @@ class Game():
     pl.bet += amt
     return 'br'
 
-  def f(self,pl):
+  def f(self,pl,fold_cleanup=True):
     opp = self.players[(pl + 1) % 2]
     pl = self.players[pl]
     prerake_pot = opp.bet + self.pot + pl.bet
     if opp.bet <= pl.bet:
       # Check if no bet
       return 'xc'
-    if len(pl.hand.community) > 0:
-      raked_pot = max(prerake_pot * (1. - self.rake), prerake_pot - self.max_rake)
-    else:
-      raked_pot = prerake_pot
-    opp.stack += raked_pot
-    opp.bet = 0.
-    self.pot = 0.
-    self.bet = 0.
+    if fold_cleanup:
+      if len(pl.hand.community) > 0:
+        raked_pot = max(prerake_pot * (1. - self.rake), prerake_pot - self.max_rake)
+      else:
+        raked_pot = prerake_pot
+      opp.stack += raked_pot
+      opp.bet = 0.
+      self.pot = 0.
+      pl.bet = 0.
     return 'f'
 
   def blinds(self):
