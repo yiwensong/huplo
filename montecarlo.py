@@ -91,9 +91,15 @@ class MCT():
     moves = g.moves()
     val = g.payoff()
     while len(moves) > 0 and val[0] == 0 and val[1] == 0:
-      g.move(moves[random.randint(0,len(moves)-1)])
+      mv = moves[random.randint(0,len(moves)-1)]
+      print 'about to perform', mv
+      print 'current game state',g
+      # raw_input()
+      g.move(mv)
       moves = g.moves()
       val = g.payoff()
+      print 'new game state',val[0], val[1],g
+      # raw_input()
     # print g.payoff()
     # print self
     # print g
@@ -125,11 +131,23 @@ def mcts(game,max_sim=1000,c=None):
   g = game.copy()
   ap = g.active()
   mct_root = MCT(None,g) #,(ap + 1) % 2)
-  print ap,g.active(),mct_root.player
-  
+  # print ap,g.active(),mct_root.player
+
   for t in xrange(1,max_sim):
+    print 'mcts sim #',t
     curr = mct_root
     curr = mct_root.random_traverse(t,c)
+    print game
+    print mct_root.game
+    print curr.game
+    if curr.game.g.pot == 0 and curr.game.g.p0.bet == 0 and curr.game.g.p1.bet == 0:
+      print 'ERROR'
+      print curr
+      print curr.parent.game
+      for m,c in zip(curr.parent.game.moves(),curr.parent.children):
+        print m,c.game
+      raise Exception
+    print 'parent',curr.parent
     outcomes = curr.simulate()
     curr.prop_up(outcomes)
     curr.expand()

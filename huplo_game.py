@@ -202,6 +202,10 @@ class Hand():
                     best_rank = rk[1]
                     best_cards = curr
 
+    # print self
+    # print 'community len',clength
+    # print 'BEST_TYPE',best_type
+    # print 'BEST_RANK',best_rank
     return best_type,best_rank,best_cards
 
   def print_card(self,card):
@@ -298,29 +302,44 @@ class CallStation():
     return game.xc
 
 class Player():
-  def __init__(self,stack,player_type,ai=None):
+  def __init__(self,stack,player_type,ai=None,cpy=None):
     self.player_type = player_type
     self.stack = stack
+    self.hand = None
     if ai is None:
       ai = CallStation()
     self.ai = ai
 
-    # Set by game
-    self.hand = None
-    self.bet = 0.
+    if cpy is not None:
+      if cpy.hand is not None:
+        self.hand = cpy.hand
+        self.hand.hole = list(cpy.hand.hole)
+        self.hand.community = []
+      else:
+        self.hand = None
+      self.bet = cpy.bet
+    else:
+      # Set by game
+      self.hand = None
+      self.bet = 0.
 
 class Game():
   '''This is the game class. Every time you play a game, you will initialize this class'''
   def __init__(self,p0=100.,p1=100.,bb=1.,rake=.05,max_rake=.625,p0type=0,p1type=1,p0ai=None,p1ai=None,copy=None):
     '''Initializes a game with an AI and a player. Human player is p0 and AI is p1'''
     if copy is not None:
-      self.p0 = Player(p0,p0type,ai=p0ai)
-      self.p1 = Player(p1,p1type,ai=p1ai)
+      # TODO: Fix this becuase you can't copy everyone all the time.
+      self.p0 = Player(p0,p0type,ai=p0ai,cpy=copy.p0)
+      self.p1 = Player(p1,p1type,ai=p1ai,cpy=copy.p1)
       self.players = [self.p0,self.p1]
       self.bb = copy.bb
 
       self.deck = Deck(cpy=copy.deck)
-      self.community = copy.community
+      self.community = list(copy.community)
+      if self.p0.hand is not None:
+        self.p0.hand.community = list(self.community)
+      if self.p1.hand is not None:
+        self.p1.hand.community = list(self.community)
       self.rake = copy.rake
       self.max_rake = copy.max_rake
       self.btn = copy.btn

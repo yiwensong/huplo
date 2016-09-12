@@ -4,9 +4,23 @@ import huplo_game as game
 class HUPLO_game():
   '''This is the class that will hook up the MCTS code with the game code'''
 
+  def preaction(self):
+    '''Deals the hand and makes players pay blinds if not already done'''
+    if self.g.p0.hand is None:
+      self.g.blinds()
+      self.g.deal_hole()
+      self.g.action = self.g.btn
+      self.g.last_action = (self.g.action + 1) % 2
+      return
+
   def __init__(self,g,arg=None):
     self.g = game.Game(p0type=0,p1type=0,copy=g)
-    self.pays = [0,0]
+    # print 'init',self
+    if arg is None:
+      self.preaction()
+      self.pays = [0,0]
+    else:
+      pass
   
   def __str__(self):
     s = ''
@@ -31,21 +45,12 @@ class HUPLO_game():
     return self.g.action
 
   def copy(self):
-    return HUPLO(self.g)
+    return HUPLO_game(self.g)
 
   def moves(self):
     if self.pays[0] != 0 or self.pays[1] != 0:
       return []
     return ['f','xc','br0','br1','br2','br3']
-
-  def preaction(self):
-    '''Deals the hand and makes players pay blinds if not already done'''
-    if self.g.p0.hand is None:
-      self.g.blinds()
-      self.g.deal_hole()
-      self.g.action = self.g.btn
-      self.g.last_action = (self.g.action + 1) % 2
-      return
 
   def pg_cleanup(self):
     self.g.pot = 0.
@@ -62,7 +67,7 @@ class HUPLO_game():
 
   def postaction(self,last_act):
     '''Deals the next cards and determines winners (if necessary)'''
-    print self.g.action, self.g.last_action
+    # print self.g.action, self.g.last_action
     if self.g.action == self.g.last_action and last_act == 'xc':
       self.g.last_action = self.g.btn
       self.g.action = (self.g.btn + 1) % 2
@@ -87,13 +92,18 @@ class HUPLO_game():
           self.g.p1.stack += raked_pot/2.
           self.pays[0] = raked_pot/2. - pot/2.
           self.pays[1] = raked_pot/2. - pot/2.
-        self.pg_cleanup()
+        # self.pg_cleanup()
       self.betting_cleanup()
     else:
       self.g.action = (self.g.action + 1) % 2
     if last_act == 'f':
       # Player who didn't fold wins
       winner = self.g.action
+      self.g.players[winner].stack += self.g.players[winner].bet - self.g.players[(winner + 1) % 2].bet
+      self.g.pot += self.g.players[winner].bet
+      self.g.pot += self.g.players[(winner + 1) % 2].bet
+      self.g.p0.bet = 0.
+      self.g.p1.bet = 0.
       if len(self.g.community) > 0:
         raked_pot = max(self.g.pot * (1. - self.g.rake), self.g.pot - self.g.max_rake)
       else:
@@ -101,10 +111,11 @@ class HUPLO_game():
       self.g.players[winner].stack += raked_pot
       self.pays[winner] = raked_pot - self.g.pot/2.
       self.pays[(winner + 1) % 2] = -self.g.pot/2.
-      self.pg_cleanup()
+      # self.pg_cleanup()
+      print 'after pg_cleanup',self.pays[0],self.pays[1]
 
   def move(self,mv):
-    print self.g.action,'plays',mv,'(btn is',self.g.btn,')'
+    # print self.g.action,'plays',mv,'(btn is',self.g.btn,')'
     self.preaction()
     act = self.g.action
     pot = self.g.maxbet(act)
@@ -128,27 +139,49 @@ class HUPLO_game():
     if last_act == 'br':
       self.g.last_action = (act + 1) % 2
     self.postaction(last_act)
+    print 'inside move function',self.pays[0],self.pays[1]
 
 
   def payoff(self):
+    # if self.pays[0] != 0 or self.pays[1] != 0:
+    #   print 'PAID',self.pays[0]
     return self.pays
 
 
 def main():
   global g,h
+  # h = game.Game()
+  # g = HUPLO_game(h)
+  # print g.moves()
+  # g.move('br0')
+  # print g
+  # g.move('br0')
+  # print g
+  # g.move('br0')
+  # print g
+  # g.move('xc')
+  # print g
+  # g.move('xc')
+  # print g
+  # g.move('xc')
+  # print g
+  # g.move('xc')
+  # print g
+  # g.move('xc')
+  # print g
+  # g.move('xc')
+  # print g
+  # g.move('xc')
+  # print g
+  # g.move('xc')
+  # print g
+
   h = game.Game()
   g = HUPLO_game(h)
-  print g.moves()
-  g.move('br0')
   print g
-  g.move('br0')
-  print g
-  g.move('br0')
-  print g
-  g.move('xc')
-  print g
-  g.move('xc')
-  print g
+  # g.move('br0')
+  # print g
+  best = montecarlo.mcts(g)
 
 if __name__=='__main__':
   main()
